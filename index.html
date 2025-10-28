@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Sound Visualizer - Phone Video Export</title>
+    <link rel="stylesheet" href="src/styles.css" />
+  </head>
+  <body>
+    <div class="app">
+      <header>
+        <h1>Sound Visualizer — Phone Video Export</h1>
+      </header>
+
+      <main>
+        <div class="stage">
+          <canvas id="vis" width="1080" height="1920"></canvas>
+          <div class="overlay">
+              <div class="controls">
+                <button id="btn-mic">Start Mic</button>
+                <button id="btn-record" disabled>Start Recording</button>
+                <button id="btn-stop" disabled>Stop Recording</button>
+                <select id="preset">
+                  <option value="1080x1920">1080×1920 (Full HD Portrait)</option>
+                  <option value="720x1280">720×1280 (HD Portrait)</option>
+                  <option value="540x960">540×960 (Small)</option>
+                </select>
+              </div>
+          </div>
+        </div>
+
+        <section class="preview">
+          <h2>Preview / Download</h2>
+          <video id="preview" controls playsinline></video>
+          <div class="download-row">
+            <a id="downloadLink" download="visualization.webm" style="display:none" class="btn">Download WebM</a>
+            <button id="btn-convert-cli" class="btn" style="display:none">Show ffmpeg CLI</button>
+            <button id="btn-convert-browser" class="btn" style="display:none">Convert to MP4 (browser, experimental)</button>
+          </div>
+          <div id="convertStatus" style="margin-top:8px;color:#cbd5e1"></div>
+        </section>
+
+        <section class="notes">
+          <h3>Notes</h3>
+          <ul>
+            <li>This app runs locally in your browser. Use a modern Chromium-based browser (Chrome, Edge) for best results.</li>
+            <li>Recording exports a WebM file (VP8/Opus). Convert to MP4 with ffmpeg if needed for some phones.</li>
+          </ul>
+        </section>
+      </main>
+
+      <script src="src/app.js"></script>
+    </div>
+  </body>
+</html>

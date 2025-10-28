@@ -1,0 +1,36 @@
+/* styles.css - simple layout for the visualizer */
+:root{
+  --bg:#0b0b12;
+  --panel:#0f1720;
+  --muted:#98a0b3;
+}
+html,body{
+  height:100%;
+  margin:0;
+  font-family:Segoe UI, Roboto, Arial, sans-serif;
+  background: linear-gradient(180deg,#02020a 0%, #081024 100%);
+  color:#e7eef8;
+}
+.app{
+  max-width:980px;
+  margin:18px auto;
+  padding:12px;
+}
+header h1{ margin:4px 0 12px 0; font-size:20px }
+.stage{ position:relative; display:flex; justify-content:center; align-items:center; }
+canvas{ background:#000; box-shadow:0 6px 30px rgba(0,0,0,0.6); border-radius:8px; }
+.overlay{ position:absolute; top:12px; left:12px; right:12px; display:flex; justify-content:flex-start; }
+.controls{ background:rgba(0,0,0,0.35); padding:8px; border-radius:8px; display:flex; gap:8px; align-items:center; }
+.controls button, .controls select{ padding:8px 10px; border-radius:6px; border:none; background:#112033; color:#fff; cursor:pointer; }
+.controls button[disabled]{ opacity:0.5; cursor:not-allowed }
+.preview{ margin-top:18px; display:flex; flex-direction:column; gap:8px; }
+.preview video{ width:360px; height:auto; background:#000; border-radius:6px; }
+.download-row{ display:flex; gap:8px; align-items:center; margin-top:8px }
+.btn{ display:inline-block; padding:8px 10px; background:#0b67a6; color:#fff; border-radius:6px; text-decoration:none }
+.notes{ margin-top:12px; color:var(--muted); font-size:14px }
+
+@media (max-width:520px){
+  .app{ padding:6px }
+  canvas{ width:100%; height:auto }
+  .preview video{ width:100% }
+}

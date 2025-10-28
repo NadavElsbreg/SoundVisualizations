@@ -1,0 +1,11 @@
+{
+  "name": "sound-visualizations",
+  "version": "0.1.0",
+  "description": "Local sound visualizer that records phone-ready video with audio",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "author": "",
+  "license": "MIT"
+}
