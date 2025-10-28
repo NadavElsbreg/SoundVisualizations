@@ -25,6 +25,12 @@
                   <option value="720x1280">720×1280 (HD Portrait)</option>
                   <option value="540x960">540×960 (Small)</option>
                 </select>
+              <input id="fileInput" type="file" accept="audio/*" style="margin-left:8px" />
+              <button id="btn-load" class="small">Load File</button>
+                <label class="small">Width: <input id="widthSlider" type="range" min="0.5" max="4" step="0.1" value="1.2"/></label>
+                <label class="small">Low: <input id="lowColor" type="color" value="#00e6ff"/></label>
+                <label class="small">Mid: <input id="midColor" type="color" value="#ff00c8"/></label>
+                <label class="small">High: <input id="highColor" type="color" value="#ffd700"/></label>
               </div>
           </div>
         </div>
@@ -32,10 +38,12 @@
         <section class="preview">
           <h2>Preview / Download</h2>
           <video id="preview" controls playsinline></video>
+          <audio id="filePlayer" controls style="display:block; margin-top:8px; width:360px"></audio>
           <div class="download-row">
+            <input id="filenameInput" type="text" value="visualization" style="padding:6px;border-radius:6px;border:none" />
             <a id="downloadLink" download="visualization.webm" style="display:none" class="btn">Download WebM</a>
             <button id="btn-convert-cli" class="btn" style="display:none">Show ffmpeg CLI</button>
-            <button id="btn-convert-browser" class="btn" style="display:none">Convert to MP4 (browser, experimental)</button>
+            <button id="btn-convert-browser" class="btn" style="display:none" disabled>Convert to MP4 (disabled)</button>
           </div>
           <div id="convertStatus" style="margin-top:8px;color:#cbd5e1"></div>
         </section>
