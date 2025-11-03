@@ -31,6 +31,7 @@
                 <label class="small">Low: <input id="lowColor" type="color" value="#00e6ff"/></label>
                 <label class="small">Mid: <input id="midColor" type="color" value="#ff00c8"/></label>
                 <label class="small">High: <input id="highColor" type="color" value="#ffd700"/></label>
+              <button id="btn-band-editor" class="small">Band Editor</button>
               </div>
           </div>
         </div>
@@ -42,11 +43,22 @@
           <div class="download-row">
             <input id="filenameInput" type="text" value="visualization" style="padding:6px;border-radius:6px;border:none" />
             <a id="downloadLink" download="visualization.webm" style="display:none" class="btn">Download WebM</a>
+            <button id="btn-save-native" class="btn" style="display:none">Save (native)</button>
             <button id="btn-convert-cli" class="btn" style="display:none">Show ffmpeg CLI</button>
             <button id="btn-convert-browser" class="btn" style="display:none" disabled>Convert to MP4 (disabled)</button>
           </div>
           <div id="convertStatus" style="margin-top:8px;color:#cbd5e1"></div>
         </section>
+
+        <aside id="bandEditor" class="band-editor" style="display:none">
+          <h3>Band Editor</h3>
+          <div class="band-controls">
+            <label>Number of bands: <input id="bandCount" type="number" min="2" max="64" value="10" style="width:60px"/></label>
+            <button id="btn-reset-bands" class="small">Reset Equal Bands</button>
+            <button id="btn-apply-bands" class="small">Apply</button>
+          </div>
+          <div id="bandList" class="band-list"></div>
+        </aside>
 
         <section class="notes">
           <h3>Notes</h3>

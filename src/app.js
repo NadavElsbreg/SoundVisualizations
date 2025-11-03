@@ -20,6 +20,7 @@
   const btnConvertCli = document.getElementById('btn-convert-cli');
   const btnConvertBrowser = document.getElementById('btn-convert-browser');
   const convertStatusEl = document.getElementById('convertStatus');
+  const btnSaveNative = document.getElementById('btn-save-native');
 
 
   let audioCtx = null;
@@ -32,6 +33,7 @@
   let sourceType = null; // 'mic' | 'file'
   let widthMultiplier = parseFloat(widthSlider ? widthSlider.value : 1);
   let bandFreqs = null; // array of {start, end, center}
+  let bandBins = null; // array of {startBin, endBin}
 
   // scrolling parameters
   const secondsToShow = 6; // default show last N seconds
@@ -110,6 +112,9 @@
       sourceType = 'file';
       btnRecord.disabled = false;
       draw();
+      // ensure band editor reflects new analyser/sampleRate
+      updateBandBins();
+      renderBandEditor();
     } catch (err) {
       console.warn('Could not create media element source:', err);
       alert('Loading file failed: ' + err.message);
@@ -150,6 +155,8 @@
     if (audioCtx) { try { audioCtx.suspend(); } catch(e){} }
     if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
     clearCanvas();
+    // update band editor UI
+    renderBandEditor();
   }
 
   function setupAnalyserIfNeeded() {
@@ -160,19 +167,98 @@
       dataArray = new Uint8Array(bufferLength);
       freqArray = new Uint8Array(analyser.frequencyBinCount);
       // compute band frequency ranges
-      const bands = 10;
-      const binCount = analyser.frequencyBinCount;
-      const sampleRate = audioCtx.sampleRate || 44100;
-      const freqPerBin = sampleRate / analyser.fftSize;
-      bandFreqs = new Array(bands).fill(0).map((_, i) => {
-        const startBin = Math.floor(i * binCount / bands);
-        const endBin = Math.floor((i + 1) * binCount / bands) - 1;
-        const startHz = Math.max(0, startBin * freqPerBin);
-        const endHz = Math.max(0, endBin * freqPerBin);
-        const center = (startHz + endHz) / 2;
-        return { startHz, endHz, center };
-      });
+      // initialize equal bands
+      setEqualBands(10);
     }
+  }
+
+  // Band editor UI
+  const btnBandEditor = document.getElementById('btn-band-editor');
+  const bandEditor = document.getElementById('bandEditor');
+  const bandList = document.getElementById('bandList');
+  const bandCountInput = document.getElementById('bandCount');
+  const btnResetBands = document.getElementById('btn-reset-bands');
+  const btnApplyBands = document.getElementById('btn-apply-bands');
+
+  if (btnBandEditor) btnBandEditor.addEventListener('click', () => {
+    if (!bandEditor) return;
+    bandEditor.style.display = bandEditor.style.display === 'none' ? 'block' : 'none';
+    renderBandEditor();
+  });
+
+  function renderBandEditor() {
+    if (!bandList) return;
+    bandList.innerHTML = '';
+    if (!bandFreqs) return;
+    bandFreqs.forEach((b, i) => {
+      const row = document.createElement('div');
+      row.className = 'band-row';
+      const label = document.createElement('div');
+      label.className = 'band-label';
+      label.textContent = (i+1);
+      const start = document.createElement('input');
+      start.type = 'number'; start.min = 0; start.value = Math.round(b.startHz);
+      const end = document.createElement('input');
+      end.type = 'number'; end.min = 0; end.value = Math.max(1, Math.round(b.endHz));
+      row.appendChild(label);
+      row.appendChild(start);
+      row.appendChild(end);
+      bandList.appendChild(row);
+    });
+  }
+
+  if (btnResetBands) btnResetBands.addEventListener('click', () => {
+    const n = parseInt(bandCountInput ? bandCountInput.value : 10, 10) || 10;
+    if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    setupAnalyserIfNeeded();
+    setEqualBands(n);
+    renderBandEditor();
+  });
+
+  if (btnApplyBands) btnApplyBands.addEventListener('click', () => {
+    if (!bandList || !bandFreqs) return;
+    const rows = Array.from(bandList.children);
+    rows.forEach((row, i) => {
+      const inputs = row.querySelectorAll('input');
+      const s = parseFloat(inputs[0].value) || 0;
+      const e = parseFloat(inputs[1].value) || Math.max(1, s+1);
+      bandFreqs[i].startHz = Math.max(0, s);
+      bandFreqs[i].endHz = Math.max(bandFreqs[i].startHz + 1, e);
+      bandFreqs[i].center = (bandFreqs[i].startHz + bandFreqs[i].endHz) / 2;
+    });
+    updateBandBins();
+  });
+
+  // set initial band editor state
+  if (!bandFreqs && audioCtx) setupAnalyserIfNeeded();
+  renderBandEditor();
+
+  function setEqualBands(count) {
+    const bands = Math.max(2, Math.min(64, Math.floor(count)));
+    const sampleRate = audioCtx.sampleRate || 44100;
+    const freqPerBin = sampleRate / analyser.fftSize;
+    const binCount = analyser.frequencyBinCount;
+    bandFreqs = new Array(bands).fill(0).map((_, i) => {
+      const startBin = Math.floor(i * binCount / bands);
+      const endBin = Math.floor((i + 1) * binCount / bands) - 1;
+      const startHz = Math.max(0, startBin * freqPerBin);
+      const endHz = Math.max(0, endBin * freqPerBin);
+      const center = (startHz + endHz) / 2;
+      return { startHz, endHz, center };
+    });
+    updateBandBins();
+  }
+
+  function updateBandBins() {
+    if (!bandFreqs || !analyser) return;
+    const sampleRate = audioCtx.sampleRate || 44100;
+    const freqPerBin = sampleRate / analyser.fftSize;
+    const binCount = analyser.frequencyBinCount;
+    bandBins = bandFreqs.map(b => {
+      const s = Math.max(0, Math.floor(b.startHz / freqPerBin));
+      const e = Math.min(binCount - 1, Math.max(s, Math.floor(b.endHz / freqPerBin)));
+      return { startBin: s, endBin: e };
+    });
   }
 
   function stopMic() {
@@ -227,10 +313,15 @@
     const midRgb = midColorEl ? hexToRgb(midColorEl.value) : {r:255,g:0,b:200};
     const highRgb = highColorEl ? hexToRgb(highColorEl.value) : {r:255,g:215,b:0};
     for (let line = 0; line < lines; line++) {
-      const bandStart = Math.floor(line * freqArray.length / lines);
-      const bandEnd = Math.floor((line + 1) * freqArray.length / lines);
+      // use bandBins if available (from editor), otherwise fallback to equal split
       let bandSum = 0;
-      for (let k = bandStart; k < bandEnd; k++) bandSum += freqArray[k];
+      let bandStart = Math.floor(line * freqArray.length / lines);
+      let bandEnd = Math.floor((line + 1) * freqArray.length / lines);
+      if (bandBins && bandBins[line]) {
+        bandStart = bandBins[line].startBin;
+        bandEnd = bandBins[line].endBin + 1;
+      }
+      for (let k = bandStart; k < bandEnd; k++) bandSum += freqArray[k] || 0;
       const bandAvg = bandSum / Math.max(1, (bandEnd - bandStart));
       const norm = bandAvg / 255;
       // color interpolation based on band position (low->mid->high)
@@ -258,16 +349,7 @@
       const barW = Math.max(1, Math.floor((dx || 1) * Math.max(1, widthMultiplier)));
       ctx.fillRect(x - (barW-1), baseY - ampPx, barW, ampPx * 2);
 
-      // draw frequency label to the left of the bar (small)
-      if (bandFreqs && bandFreqs[line]) {
-        const label = formatHz(bandFreqs[line].center);
-        ctx.fillStyle = 'rgba(230,235,245,0.9)';
-        const fontSize = Math.max(12, Math.floor(w / 72));
-        ctx.font = `${fontSize}px sans-serif`;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText(label, 8, baseY);
-      }
+      // frequency labels are shown in the separate Band Editor panel (out of video frame)
 
       // add light thin highlight
       if (norm > 0.08) {
@@ -340,6 +422,29 @@
           const mp4Name = safeBase + '.mp4';
           if (convertStatusEl) convertStatusEl.textContent = `ffmpeg -i ${webmName} -c:v libx264 -crf 18 -preset fast -c:a aac -b:a 160k ${mp4Name}`;
         };
+      }
+
+      // Native save (Electron) - prefer native save if available
+      if (btnSaveNative) {
+        if (window && window.electronAPI) {
+          btnSaveNative.style.display = 'inline-block';
+          btnSaveNative.onclick = async () => {
+            try {
+              convertStatusEl.textContent = 'Preparing file...';
+              const arrayBuffer = await blob.arrayBuffer();
+              // ask main process to show save dialog and write file
+              const result = await window.electronAPI.saveFile(safeBase + '.webm', arrayBuffer);
+              if (result && result.success) convertStatusEl.textContent = 'Saved to: ' + result.path;
+              else convertStatusEl.textContent = 'Save canceled or failed.';
+            } catch (err) {
+              console.error(err);
+              convertStatusEl.textContent = 'Save failed: ' + err.message;
+            }
+          };
+        } else {
+          // not running in electron; hide native save
+          btnSaveNative.style.display = 'none';
+        }
       }
 
         // show conversion options
